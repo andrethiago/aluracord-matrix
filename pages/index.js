@@ -1,34 +1,10 @@
 import { Box, Button, Text, TextField, Image } from '@skynexui/components';
+import React from 'react';
+import { useRouter } from 'next/router';
 import appConfig from '../config.json';
+import { responseSymbol } from 'next/dist/server/web/spec-compliant/fetch-event';
 
-function GlobalStyle() {
-    return (
-        <style global jsx>{`
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-          list-style: none;
-        }
-        body {
-          font-family: 'Open Sans', sans-serif;
-        }
-        /* App fit Height */ 
-        html, body, #__next {
-          min-height: 100vh;
-          display: flex;
-          flex: 1;
-        }
-        #__next {
-          flex: 1;
-        }
-        #__next > * {
-          flex: 1;
-        }
-        /* ./App fit Height */ 
-      `}</style>
-    );
-}
+
 
 function Titulo(props) {
     const Tag = props.tag || 'h1';
@@ -61,11 +37,14 @@ function Titulo(props) {
 export default HomePage;*/
 
 export default function PaginaInicial() {
-    const username = 'andrethiago';
+    //const username = 'andrethiago';
+    const [username, setUsername] = React.useState('andrethiago');
+    const roteamento = useRouter();
+    const [avatar, setAvatar] = React.useState('andrethiago');
+    const [bio, setBio] = React.useState('');
 
     return (
         <>
-            <GlobalStyle />
             <Box
                 styleSheet={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -92,6 +71,11 @@ export default function PaginaInicial() {
                     {/* Formulário */}
                     <Box
                         as="form"
+                        onSubmit={function (infosDoEvento) {
+                            infosDoEvento.preventDefault();
+                            console.log('submit do form')
+                            roteamento.push('/chat');
+                        }}
                         styleSheet={{
                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                             width: { xs: '100%', sm: '50%' }, textAlign: 'center', marginBottom: '32px',
@@ -102,6 +86,17 @@ export default function PaginaInicial() {
                             {appConfig.name}
                         </Text>
 
+                        {/*<input 
+                            type="text"
+                            value={username}
+                            onChange={function (event) {
+                                console.log('usuário digitou', event.target.value);
+                                // onde está o valor
+                                const valor = event.target.value;
+                                // trocar o valor da variável
+                                setUsername(valor)
+                            }}/>*/}
+
                         <TextField
                             fullWidth
                             textFieldColors={{
@@ -111,6 +106,31 @@ export default function PaginaInicial() {
                                     mainColorHighlight: appConfig.theme.colors.primary[500],
                                     backgroundColor: appConfig.theme.colors.neutrals[800],
                                 },
+                            }}
+                            value={username}
+                            onChange={function (event) {
+                                const valor = event.target.value;
+                                setUsername(valor);
+                                if(valor.length > 2) {
+                                    const url = `https://api.github.com/users/${valor}`
+                                    console.log(url)
+                                    return fetch(url)
+                                        .then((response) => {
+                                            if (response.ok) {
+                                                setAvatar(valor);
+                                                return response.json();
+                                            } else {
+                                                setAvatar()
+                                                return Promise.reject('some other error: ' + response.status)
+                                            }
+                                        })
+                                        .then((responseJson) => {
+                                            setBio(responseJson.bio);
+                                        })
+                                        .catch((error) => {
+                                            console.error('deu erro', error);
+                                        });
+                                }
                             }}
                         />
                         <Button
@@ -149,7 +169,8 @@ export default function PaginaInicial() {
                                 borderRadius: '50%',
                                 marginBottom: '16px',
                             }}
-                            src={`https://github.com/${username}.png`}
+                            src={`https://github.com/${avatar}.png`}
+                            title={`${bio}`}
                         />
                         <Text
                             variant="body4"
