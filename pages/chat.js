@@ -1,22 +1,48 @@
 import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import React from 'react';
 import appConfig from '../config.json';
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzcyNTA0NCwiZXhwIjoxOTU5MzAxMDQ0fQ.K1YDfhR5HZ6IoWLmuXouuZ8nRoPowyRdUwKAW8X8_bo';
+const SUPABASE_URL = 'https://bahkrkoqroesbbjzrwzl.supabase.co';
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export default function ChatPage() {
     // Sua lógica vai aqui
     const [mensagem, setMensagem] = React.useState('');
     const [listaDeMensagens, setListaDeMensagens] = React.useState([]);
+    
+    // useEffect é usado para coisas que fogem do fluxo padrão (por exemplo, ida ao servidor)
+    React.useEffect(() => {
+        supabaseClient
+            .from('mensagens')
+            .select('*')
+            .order('created_at', {ascending: false})
+            .then( ({data}) => {
+                console.log('fetch')
+                setListaDeMensagens(data);
+            });
+    }, []); // informa que deve ser executado quando a listaDeMensagens modificar
 
     function handleNovaMensagem(novaMensagem) {
         const mensagem = {
-            id: listaDeMensagens.length + 1,
+            //id: listaDeMensagens.length + 1,
             de: 'andrethiago',
             texto: novaMensagem
         };
-        setListaDeMensagens([
-            mensagem,
-            ...listaDeMensagens
-        ]);
+
+        supabaseClient
+            .from('mensagens')
+            .insert([
+                mensagem
+            ])
+            .then(({data}) => {
+                setListaDeMensagens([
+                    data[0],
+                    ...listaDeMensagens
+                ]);
+            });
+
         setMensagem('');
     }
 
